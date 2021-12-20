@@ -1,62 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
-<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
-	xmlns="http://www.mulesoft.org/schema/mule/core"
-	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
-http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
-http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
-	<flow name="Offers" doc:id="3ad981fc-9f62-4db2-846b-5e35519596e9" >
-		<set-variable value='#[upper(payload.offercode default "welcome")]' doc:name="offerCode" doc:id="12791a21-3890-4c75-9c1d-0b0a1afed721" variableName="offerCode"/>
-		<ee:transform doc:name="check offerCode" doc:id="9eeefb29-d4f3-4c7d-ab71-f1b37c22eca0" >
-			<ee:message >
-				<ee:set-payload ><![CDATA[%dw 2.0
-import firstWith from dw::core::Arrays
-
-output application/json
-
-var offers = [	
-	{
-		offerCode : "WELCOME",
-		offerValue: 0
-	},
-	{
-		offerCode : "FIRST2",
-		offerValue: 2
-	},
-	{
-		offerCode : "BUMP10",
-		offerValue: 10
-	},
-	{
-		offerCode: "FESTIVE30",
-		offerValue: 30
-	}
-]
----
-
-offers firstWith  ((val, index) -> val.offerCode == vars.offerCode)]]></ee:set-payload>
-			</ee:message>
-		</ee:transform>
-		<validation:is-not-null doc:name="check payload" doc:id="3ad5512d-ad95-4104-9479-787f5ea926ba" value="#[payload]" message="Invalid Offercode"/>
-		<logger level="INFO" doc:name="success" doc:id="1df1c9a2-201a-4197-9112-51125faa3cea" message="#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    severity: &quot;LOW&quot;,&#10;    eventType: &quot;OfferCodeValidity&quot;,&#10;    env: &quot;DEV&quot;,&#10;    messageId: uuid() as String,&#10;    muleAppName: &quot;prt-offers-sys-api&quot;,&#10;    intgCreationDate: now() as String {format: &quot;yyyy-MM-dd'T'HH:mm:ss.ss'Z'&quot;},&#10;    payload: write(payload,'application/json'),&#10;    resultMessage: vars.errorMessage default ' ',&#10;    result: &quot;Success&quot;,&#10;    action: &quot;Valid OfferCode&quot;&#10;}]"/>
-		<error-handler >
-			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error continue" doc:id="d964193b-e8fd-4ff5-a662-77389dba7ea3" type="VALIDATION:NULL">
-				<ee:transform doc:name="set error payload and httpStatus" doc:id="6108ee8c-9774-45fa-ae55-f3017684cfaa" >
-					<ee:message >
-						<ee:set-payload ><![CDATA[%dw 2.0
-output application/json
----
-{
-  "error_type": "400 Bad Request",
-  "error_description": "Invalid OfferCode"
-}]]></ee:set-payload>
-					</ee:message>
-					<ee:variables >
-						<ee:set-variable variableName="httpStatus" ><![CDATA[400]]></ee:set-variable>
-					</ee:variables>
-				</ee:transform>
-				<logger level="INFO" doc:name="error" doc:id="992ac351-75bd-4809-9006-a3da7072ddc2" message="#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    severity: &quot;Error&quot;,&#10;    eventType: &quot;OfferCodeValidity&quot;,&#10;    env: &quot;DEV&quot;,&#10;    messageId: uuid() as String,&#10;    muleAppName: &quot;prt-offers-sys-api&quot;,&#10;    intgCreationDate: now() as String {format: &quot;yyyy-MM-dd'T'HH:mm:ss.ss'Z'&quot;},&#10;    payload: write(error.detailedDescription,'application/json'),&#10;    resultMessage: error.detailedDescription default ' ',&#10;    result: &quot;Error&quot;,&#10;    action: &quot;Invalid OfferCode&quot;&#10;}]"/>
-			</on-error-continue>
-		</error-handler>
-	</flow>
-</mule>
