@@ -1,0 +1,23 @@
+#%RAML 1.0
+title: prt-offers-sys-api
+
+
+types:
+  offers_response_datatype : !include datatypes/offers_response_datatype.raml
+
+/offers:
+  post:
+  
+    body:
+      application/json:
+        type: object
+        example:
+          offercode: string
+    responses:
+      200:
+        body:
+          application/json:
+            type: offers_response_datatype
+            examples:
+              output: !include examples/offers_response_example.raml
+            
